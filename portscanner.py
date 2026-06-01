@@ -1,6 +1,9 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor
 
+#lista compartida
+resultados = []
+
 def escanear_puerto(ip, puerto):
     try:
         #Voy a usar with para el socket se cierre automaticamente cuando termine
@@ -19,6 +22,7 @@ def escanear_puerto(ip, puerto):
               banner = servicios_comunes.get(puerto, "Servicio desconocido (Timeout)")
          
           print(f"[+] Puerto {puerto} Abierto -> Servicio: {banner}")
+          resultados.append(f"Puerto {puerto} Abierto -> Servicio: {banner}")
     
     except Exception:
     #Si llega a haber un error de red o interrupcion pues solo se ignora para no romper el bucle 
@@ -47,8 +51,18 @@ def main():
     with ThreadPoolExecutor(max_workers=100) as  executor:
         executor.map(lambda p: escanear_puerto(ip, p), puertos)
 
-        print("-------------------------")
-        print("Escaneo finalizado")
+    print("-------------------------")
+    print("Escaneo finalizado")
+
+    with open("resultados.txt", "w") as archivo: 
+        archivo.write(f"Resultados del escaneo en {ip}\n")
+        archivo.write("=" * 40 + "\n")
+        for resultado in resultados:
+            archivo.write(resultado + "\n")
+    print(f"\nResultados guardados en Resultados.txt")
+
+     
+
 
 if __name__== "__main__":
     main()
