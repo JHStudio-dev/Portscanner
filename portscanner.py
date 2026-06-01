@@ -1,8 +1,32 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import re
+
 
 #lista compartida
 resultados = []
+
+#Herramienta para tratar de encontrar el os (no es muy precisa pero tratare de actualizar o cambiarla con el tiempo)
+def detectar_os(ip):
+    try:
+        resultado: subprocess.run(
+                ["ping", "-c", "1", "-W", "1", ip],
+                capture_output=True,
+                text=True
+                )
+        ttl_match = re.search(r"ttl=(\d+)", resultado.stdout, re, IGNORECASE)
+        if ttl_match:
+            ttl = int(ttl_match.group(1))
+            if ttl <= 64:
+                return f"Linux / Mac (TTL={ttl})"
+            elif ttl <= 128:
+                return f"Windows(TTL={ttl})"
+            else:
+                return f"Cisco / Router (TTL={ttl})"
+            return "OS desconocido"
+    except Exception:
+            return "OS desconocido"
 
 def escanear_puerto(ip, puerto):
     try:
@@ -30,6 +54,11 @@ def escanear_puerto(ip, puerto):
 
 def main():
     ip = input("Ingrese la direccion IP a escanear: ")
+    #agregado para la deteccion de OS
+    print(f"\nDetectando OS...")
+    os_detectado = detectar_os(ip)
+    print(f"OS probable: {os_detectado}")
+    print("------------------------------------")
     #Cambio para tener la opcion de esenciales y completo
     print("\nQue tipo de escaneo queres realizar?")
     print("1. Escaneo rapido (Puertos 1 al 1,024)")
