@@ -10,12 +10,12 @@ resultados = []
 #Herramienta para tratar de encontrar el os (no es muy precisa pero tratare de actualizar o cambiarla con el tiempo)
 def detectar_os(ip):
     try:
-        resultado: subprocess.run(
+        resultado = subprocess.run(
                 ["ping", "-c", "1", "-W", "1", ip],
                 capture_output=True,
                 text=True
                 )
-        ttl_match = re.search(r"ttl=(\d+)", resultado.stdout, re, IGNORECASE)
+        ttl_match = re.search(r"ttl=(\d+)", resultado.stdout, re.IGNORECASE)
         if ttl_match:
             ttl = int(ttl_match.group(1))
             if ttl <= 64:
@@ -55,10 +55,7 @@ def escanear_puerto(ip, puerto):
 def main():
     ip = input("Ingrese la direccion IP a escanear: ")
     #agregado para la deteccion de OS
-    print(f"\nDetectando OS...")
     os_detectado = detectar_os(ip)
-    print(f"OS probable: {os_detectado}")
-    print("------------------------------------")
     #Cambio para tener la opcion de esenciales y completo
     print("\nQue tipo de escaneo queres realizar?")
     print("1. Escaneo rapido (Puertos 1 al 1,024)")
@@ -83,16 +80,23 @@ def main():
     print("-------------------------")
     print("Escaneo finalizado")
 
-    with open("resultados.txt", "w") as archivo: 
+    print(f"\n--- Reporte final ---")
+    print(f"IP escaneada: {ip}")
+    print(f"OS probable: {os_detectado}")
+    print(f"Puertos abiertos: {len(resultados)}")
+
+    with open("resultados.txt", "w") as archivo:
         archivo.write(f"Resultados del escaneo en {ip}\n")
+        archivo.write(f"OS probable: {os_detectado}\n")
         archivo.write("=" * 40 + "\n")
         for resultado in resultados:
             archivo.write(resultado + "\n")
-    print(f"\nResultados guardados en Resultados.txt")
 
+    print(f"Resultados guardados en resultados.txt")
      
 
 
 if __name__== "__main__":
     main()
+
 
