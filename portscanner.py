@@ -8,25 +8,33 @@ import re
 resultados = []
 
 #Herramienta para tratar de encontrar el os (no es muy precisa pero tratare de actualizar o cambiarla con el tiempo)
+
 def detectar_os(ip):
     try:
         resultado = subprocess.run(
-                ["ping", "-c", "1", "-W", "1", ip],
-                capture_output=True,
-                text=True
-                )
+            ["ping", "-c", "1", "-W", "1", ip],
+            capture_output=True,
+            text=True
+        )
         ttl_match = re.search(r"ttl=(\d+)", resultado.stdout, re.IGNORECASE)
         if ttl_match:
             ttl = int(ttl_match.group(1))
-            if ttl <= 64:
-                return f"Linux / Mac (TTL={ttl})"
-            elif ttl <= 128:
-                return f"Windows(TTL={ttl})"
+            if ttl == 64:
+                return f"Linux / Mac (TTL={ttl}) [Confianza: Alta]"
+            elif 60 <= ttl < 64:
+                return f"Linux / Mac (TTL={ttl}) [Confianza: Media]"
+            elif ttl == 128:
+                return f"Windows (TTL={ttl}) [Confianza: Alta]"
+            elif 120 <= ttl < 128:
+                return f"Windows (TTL={ttl}) [Confianza: Media]"
+            elif ttl == 255:
+                return f"Cisco / Router (TTL={ttl}) [Confianza: Alta]"
             else:
-                return f"Cisco / Router (TTL={ttl})"
-            return "OS desconocido"
+                return f"OS desconocido (TTL={ttl}) [Confianza: Baja]"
+        return "OS desconocido [Confianza: Baja]"
     except Exception:
-            return "OS desconocido"
+        return "OS desconocido [Confianza: Baja]"
+
 
 def escanear_puerto(ip, puerto):
     try:
