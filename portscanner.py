@@ -2,6 +2,7 @@ import socket
 from concurrent.futures import ThreadPoolExecutor
 import subprocess
 import re
+import ipaddress
 
 
 #lista compartida
@@ -60,15 +61,57 @@ def escanear_puerto(ip, puerto):
     #Si llega a haber un error de red o interrupcion pues solo se ignora para no romper el bucle 
          pass
 
+def descubrir_hosts(red):
+    print(f"\nDescubriendo hosts activos en {red}...")
+    hosts_activos = []
+    red_obj = ipaddress.IPv4Network(red, strict=False)
+
+    def ping_host(ip):
+        resultado = subprocess.run(
+            ["ping", "-c", "1", "-W", "1", str(ip)],
+            capture_output=True
+            )
+        if resultado.returncode == 0:
+            hosts_activos.append(str(ip))
+            print(f"[+] Hosts activo: {ip}")
+
+    with ThreadPoolExecutor(max_workers=100) as executor:
+            executor.map(ping_host, red_obj.hosts())
+
+    return hosts_activos    
+
+
+
 def main():
-    ip = input("Ingrese la direccion IP a escanear: ")
+    #Esta parte es para la nueva opcion, bueno a lo de escanear la red completa
+    print("\nQue queres hacer?")
+    print("1. Escanear una IP especifica")
+    print("2. Escanear una red completa")
+    modo = input("Seleciona una opcion (1 o 2): ")
+
+    if modo == "2":
+        red = input("Ingrese la red (ej: 192.168.11.0/24): ")
+        hosts = descubrir_hosts(red)
+    if not hosts:
+        print("No se encontraron hosts activos.")
+        return
+    print(f"\nHosts activos encontrados: {len(hosts)}")
+    for host in hosts:
+        print(f"\nEscaneando {host}...")
+        os_detectado = detectar_os(host)
+        with ThreadPoolExecutor(max_workers=100) as executor:
+            executor.map(lambda p: escanear_puerto(host, p), range(1, 1024))
+        print(f"OS probable: {os_detectado}")
+
+    else:
+        ip = input("Ingrese la direccion IP a escanear: ")
     #agregado para la deteccion de OS
-    os_detectado = detectar_os(ip)
+        os_detectado = detectar_os(ip)
     #Cambio para tener la opcion de esenciales y completo
-    print("\nQue tipo de escaneo queres realizar?")
-    print("1. Escaneo rapido (Puertos 1 al 1,024)")
-    print("2. Escaneo completo (Todos los puertos)")
-    opcion = input("Seleciona una opcion (1 o 2): ")
+        print("\nQue tipo de escaneo queres realizar?")
+        print("1. Escaneo rapido (Puertos 1 al 1,024)")
+        print("2. Escaneo completo (Todos los puertos)")
+        opcion = input("Seleciona una opcion (1 o 2): ")
 
     #
     if opcion == "2":
